@@ -70,6 +70,19 @@ class _NavDrawerState extends State<NavDrawer> {
             ListTile(
               tileColor: AppSettings.isDarkMode ? Colors.black : Colors.white,
               textColor: AppSettings.isDarkMode ? Colors.white : Colors.black,
+              leading: Icon(
+                Icons.report_sharp,
+                color: AppSettings.isDarkMode ? Colors.white : Colors.black,
+              ),
+              onTap: () {
+                storageWidget.synchronize(context);
+                Navigator.pop(context);
+              },
+              title: const Text("Reports"),
+            ),
+            ListTile(
+              tileColor: AppSettings.isDarkMode ? Colors.black : Colors.white,
+              textColor: AppSettings.isDarkMode ? Colors.white : Colors.black,
               leading: AppSettings.isDarkMode
                   ? const Icon(
                       Icons.light_mode,

@@ -176,12 +176,15 @@ class _ConfigureTaskserverRouteState extends State<ConfigureTaskserverRoute> {
                   onTap: () {
                     ///Link the TaskServer or the Inther.am documentation
                   },
-                  child: Text(
-                    "I dont know how to configure the TaskServer",
-                    style: GoogleFonts.firaMono(
-                      color: color,
-                      decoration: TextDecoration.underline,
-                      fontWeight: FontWeight.w500,
+                  child: SizedBox(
+                    width: MediaQuery.of(context).size.width * 0.8,
+                    child: Text(
+                      "I dont know how to configure the TaskServer",
+                      style: GoogleFonts.firaMono(
+                        color: color,
+                        decoration: TextDecoration.underline,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ),
                 )
