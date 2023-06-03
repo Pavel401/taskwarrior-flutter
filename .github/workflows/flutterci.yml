@@ -2,10 +2,13 @@ name: Flutter CI
 
 on:
   push:
-    branches: [ test-ci ]
+    branches: 
+      - main
+      - test-ci
   pull_request:
-    branches: [ test-ci ]
-
+    branches: 
+        - main
+        - test-ci
 jobs:
   build:
     runs-on: ubuntu-latest
