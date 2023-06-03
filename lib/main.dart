@@ -84,6 +84,7 @@ class _MyAppState extends State<MyApp> {
       ),
       initialRoute: PageRoutes.home,
       routes: {
+        ///testing
         PageRoutes.home: (context) => HomePage(),
         PageRoutes.profile: (context) => const ProfilePage(),
       },
