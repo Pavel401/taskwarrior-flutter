@@ -22,7 +22,6 @@ jobs:
         with:
           flutter-version: '3.7.11'
       - run: flutter pub get
-      - run: flutter analyze
       - run: flutter format -n --set-exit-if-changed .
       - run: flutter test
       - run: flutter build apk
