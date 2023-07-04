@@ -1,92 +1,110 @@
-// ignore_for_file: depend_on_referenced_packages
-
-import 'dart:io';
-
 import 'package:flutter/material.dart';
+import 'package:home_widget/home_widget.dart';
 
-import 'package:loggy/loggy.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:uuid/uuid.dart';
-
-import 'package:taskwarrior/routes/pageroute.dart';
-import 'package:taskwarrior/services/notification_services.dart';
-import 'package:taskwarrior/views/home/home.dart';
-import 'package:taskwarrior/views/profile/profile.dart';
-import 'package:taskwarrior/widgets/pallete.dart';
-import 'package:taskwarrior/widgets/taskdetails/profiles_widget.dart';
-
-// import 'package:taskwarrior/model/task.dart';
-//import 'package:flutter_dotenv/flutter_dotenv.dart'
-
-Future main([List<String> args = const []]) async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  await Permission.notification.isDenied.then((value) {
-    if (value) {
-      Permission.notification.request();
-    }
-  });
+  HomeWidget.registerBackgroundCallback(backgroundCallback);
+  runApp(const MyApp());
+}
 
-  Directory? testingDirectory;
-  if (args.contains('flutter_driver_test')) {
-    testingDirectory = Directory(
-      '${Directory.systemTemp.path}/flutter_driver_test/${const Uuid().v1()}',
-    )..createSync(recursive: true);
-    stdout.writeln(testingDirectory);
-    Directory(
-      '${testingDirectory.path}/profiles/acae0462-6a34-11e4-8001-002590720087',
-    ).createSync(recursive: true);
+// Called when Doing Background Work initiated from Widget
+Future<void> backgroundCallback(Uri? uri) async {
+  if (uri?.host == 'updatecounter') {
+    int counter = 0;
+    await HomeWidget.getWidgetData<int>('_counter', defaultValue: 0)
+        .then((value) {
+      counter = value!;
+      counter++;
+    });
+    await HomeWidget.saveWidgetData<int>('_counter', counter);
+    await HomeWidget.updateWidget(
+        //this must the class name used in .Kt
+        name: 'HomeScreenWidgetProvider',
+        iOSName: 'HomeScreenWidgetProvider');
   }
-
-  runApp(
-    FutureBuilder<Directory>(
-      future: getApplicationDocumentsDirectory(),
-      builder: (context, snapshot) => (snapshot.hasData)
-          ? ProfilesWidget(
-              baseDirectory: testingDirectory ?? snapshot.data!,
-              child: const MyApp(),
-            )
-          : const Placeholder(),
-    ),
-  );
 }
 
-Future init() async {
-  Loggy.initLoggy(logPrinter: const PrettyPrinter());
-}
-
-class MyApp extends StatefulWidget {
-  const MyApp({Key? key}) : super(key: key);
-  @override
-  // ignore: library_private_types_in_public_api
-  _MyAppState createState() => _MyAppState();
-}
-
-// ignore: use_key_in_widget_constructors
-class _MyAppState extends State<MyApp> {
-  NotificationService notificationService = NotificationService();
-  @override
-  void initState() {
-    super.initState();
-
-    notificationService.initiliazeNotification();
-  }
+class MyApp extends StatelessWidget {
+  const MyApp({
+    Key? key,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Taskwarrior',
+      title: 'Flutter Demo',
       theme: ThemeData(
-        useMaterial3: true,
-        primarySwatch: Palette.kToDark,
-        visualDensity: VisualDensity.adaptivePlatformDensity,
+        primarySwatch: Colors.blue,
       ),
-      initialRoute: PageRoutes.home,
-      routes: {
-        PageRoutes.home: (context) => HomePage(),
-        PageRoutes.profile: (context) => const ProfilePage(),
-      },
+      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+    );
+  }
+}
+
+class MyHomePage extends StatefulWidget {
+  final String title;
+  const MyHomePage({Key? key, required this.title}) : super(key: key);
+
+  @override
+  MyHomePageState createState() => MyHomePageState();
+}
+
+class MyHomePageState extends State<MyHomePage> {
+  int _counter = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    HomeWidget.widgetClicked.listen((Uri? uri) => loadData());
+    loadData(); // This will load data from widget every time app is opened
+  }
+
+  void loadData() async {
+    await HomeWidget.getWidgetData<int>('_counter', defaultValue: 0)
+        .then((value) {
+      _counter = value!;
+    });
+    setState(() {});
+  }
+
+  Future<void> updateAppWidget() async {
+    await HomeWidget.saveWidgetData<int>('_counter', _counter);
+    await HomeWidget.updateWidget(
+        name: 'HomeScreenWidgetProvider', iOSName: 'HomeScreenWidgetProvider');
+  }
+
+  void _incrementCounter() {
+    setState(() {
+      _counter++;
+    });
+    updateAppWidget();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(widget.title),
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            const Text(
+              'You have pushed the button this many times:',
+            ),
+            Text(
+              '$_counter',
+              style: Theme.of(context).textTheme.headlineMedium,
+            ),
+          ],
+        ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _incrementCounter,
+        tooltip: 'Increment',
+        child: const Icon(Icons.add),
+      ),
     );
   }
 }
