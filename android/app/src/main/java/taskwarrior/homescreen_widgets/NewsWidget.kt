@@ -8,6 +8,7 @@ import android.widget.RemoteViews
 import es.antonborri.home_widget.HomeWidgetBackgroundIntent
 import es.antonborri.home_widget.HomeWidgetLaunchIntent
 import es.antonborri.home_widget.HomeWidgetProvider
+import android.util.Log
 
 /**
  * Implementation of App Widget functionality.
@@ -26,7 +27,11 @@ class NewsWidget : HomeWidgetProvider() {
                     context,
                     MainActivity::class.java)
                 setOnClickPendingIntent(R.id.widget_container, pendingIntent)
+				val title = widgetData.getString("headline_title", null) ?: "No Title Set"
+				Log.d("NewsWidget", "Title: $title")
+				Log.d("NewsWidget", "We are inside kotlin")
 
+				
                 // Swap Title Text by calling Dart Code in the Background
                 setTextViewText(R.id.headline_title, widgetData.getString("headline_title", null)
                     ?: "No Title Set")

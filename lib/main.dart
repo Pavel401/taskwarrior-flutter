@@ -15,7 +15,16 @@ import 'package:taskwarrior/views/home/home.dart';
 import 'package:taskwarrior/views/profile/profile.dart';
 import 'package:taskwarrior/widgets/pallete.dart';
 import 'package:taskwarrior/widgets/taskdetails/profiles_widget.dart';
+// ignore_for_file: use_key_in_widget_constructors, prefer_const_constructors, deprecated_member_use, avoid_unnecessary_containers, unused_element, prefer_const_literals_to_create_immutables, library_private_types_in_public_api, use_build_context_synchronously
 
+import 'package:home_widget/home_widget.dart';
+
+import 'package:taskwarrior/model/storage/storage_widget.dart';
+// ignore_for_file: depend_on_referenced_packages, prefer_typing_uninitialized_variables
+
+import 'package:syncfusion_flutter_charts/charts.dart';
+import 'package:taskwarrior/model/json/task.dart';
+import 'package:taskwarrior/model/storage.dart';
 // import 'package:taskwarrior/model/task.dart';
 //import 'package:flutter_dotenv/flutter_dotenv.dart'
 
@@ -65,10 +74,72 @@ class MyApp extends StatefulWidget {
 // ignore: use_key_in_widget_constructors
 class _MyAppState extends State<MyApp> {
   NotificationService notificationService = NotificationService();
+
+  late InheritedStorage storageWidget;
+
+  late Storage storage;
+  late final Filters filters;
+  List<Task> taskData = [];
+  List<ChartSeries> dailyBurnDown = [];
+  Directory? baseDirectory;
+  List<Task> allData = [];
   @override
   void initState() {
     super.initState();
+    Future.delayed(Duration.zero, () {
+      storageWidget = StorageWidget.of(context);
+      var currentProfile = ProfilesWidget.of(context).currentProfile;
 
+      getApplicationDocumentsDirectory().then((directory) {
+        setState(() {
+          baseDirectory = directory;
+          storage = Storage(
+            Directory('${baseDirectory!.path}/profiles/$currentProfile'),
+          );
+        });
+
+        ///fetch all data contains all the tasks
+        allData = storage.data.allData();
+
+        ///check if allData is not empty
+        if (allData.isNotEmpty) {
+          print("allData.length${allData.length}");
+
+          ///sort the data by daily burn down
+          HomeWidget.setAppGroupId('group.leighawidget');
+
+          // Mock read in some data and update the headline
+          final newHeadline = allData[0];
+
+          // print(newHeadline);
+          // print(newHeadline.id.toString());
+          // print(newHeadline.description);
+          HomeWidget.saveWidgetData<String>(
+              'headline_title', newHeadline.id.toString());
+          HomeWidget.saveWidgetData<String>(
+              'headline_description', newHeadline.description);
+          HomeWidget.updateWidget(
+            iOSName: 'NewsWidgets',
+            androidName: 'NewsWidget',
+          );
+        }
+      });
+    });
+
+    ///sort the data by daily burn down
+    HomeWidget.setAppGroupId('group.leighawidget');
+
+    // print(newHeadline);
+    // print(newHeadline.id.toString());
+    // print(newHeadline.description);
+    HomeWidget.saveWidgetData<String>(
+        'headline_title', "newHeadline.id.toString()");
+    HomeWidget.saveWidgetData<String>(
+        'headline_description', "newHeadline.description");
+    HomeWidget.updateWidget(
+      iOSName: 'NewsWidgets',
+      androidName: 'NewsWidget',
+    );
     notificationService.initiliazeNotification();
   }
 

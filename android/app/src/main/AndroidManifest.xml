@@ -7,6 +7,19 @@
         android:label="taskwarrior"
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon">
+
+
+		<receiver
+		android:name=".NewsWidget"
+		android:exported="false">
+		<intent-filter>
+			<action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+		</intent-filter>
+
+		<meta-data
+			android:name="android.appwidget.provider"
+			android:resource="@xml/news_widget_info" />
+	</receiver>
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -28,21 +41,22 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+		
+
+        <receiver
+            android:name="es.antonborri.home_widget.HomeWidgetBackgroundReceiver"
+            android:exported="true" >
+            <intent-filter>
+                <action android:name="es.antonborri.home_widget.action.BACKGROUND" />
+            </intent-filter>
+        </receiver>
+
+        <service
+            android:name="es.antonborri.home_widget.HomeWidgetBackgroundService"
+            android:exported="true"
+            android:permission="android.permission.BIND_JOB_SERVICE" />
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
-
-		<receiver
-			 android:name="es.antonborri.home_widget.HomeWidgetBackgroundReceiver"
-			 android:exported="true" >
-			 <intent-filter>
-				 <action android:name="es.antonborri.home_widget.action.BACKGROUND" />
-			 </intent-filter>
-		 </receiver>
- 
-		 <service
-			 android:name="es.antonborri.home_widget.HomeWidgetBackgroundService"
-			 android:exported="true"
-			 android:permission="android.permission.BIND_JOB_SERVICE" />			 
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />

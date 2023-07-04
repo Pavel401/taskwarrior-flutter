@@ -3,7 +3,6 @@
 import 'package:flutter/material.dart';
 
 import 'package:double_back_to_close_app/double_back_to_close_app.dart';
-import 'package:home_widget/home_widget.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:taskwarrior/config/app_settings.dart';
@@ -14,15 +13,6 @@ import 'package:taskwarrior/widgets/addTask.dart';
 import 'package:taskwarrior/widgets/buildTasks.dart';
 import 'package:taskwarrior/widgets/pallete.dart';
 import 'package:taskwarrior/widgets/tag_filter.dart';
-import 'package:taskwarrior/widgets/taskdetails/profiles_widget.dart';
-import 'package:path_provider/path_provider.dart';
-// ignore_for_file: depend_on_referenced_packages, prefer_typing_uninitialized_variables
-
-import 'dart:io';
-
-import 'package:syncfusion_flutter_charts/charts.dart';
-import 'package:taskwarrior/model/json/task.dart';
-import 'package:taskwarrior/model/storage.dart';
 
 class Filters {
   const Filters({
@@ -51,13 +41,6 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   late InheritedStorage storageWidget;
 
-  late Storage storage;
-  late final Filters filters;
-  List<Task> taskData = [];
-  List<ChartSeries> dailyBurnDown = [];
-  Directory? baseDirectory;
-  List<Task> allData = [];
-
   ///to check if the data is synced or not
 
   bool isSyncNeeded = false;
@@ -67,40 +50,6 @@ class _HomePageState extends State<HomePage> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-
-    Future.delayed(Duration.zero, () {
-      storageWidget = StorageWidget.of(context);
-      var currentProfile = ProfilesWidget.of(context).currentProfile;
-
-      getApplicationDocumentsDirectory().then((directory) {
-        setState(() {
-          baseDirectory = directory;
-          storage = Storage(
-            Directory('${baseDirectory!.path}/profiles/$currentProfile'),
-          );
-        });
-
-        ///fetch all data contains all the tasks
-        allData = storage.data.allData();
-
-        ///check if allData is not empty
-        if (allData.isNotEmpty) {
-          ///sort the data by daily burn down
-          HomeWidget.setAppGroupId('group.leighawidget');
-
-          // Mock read in some data and update the headline
-          final newHeadline = allData[0];
-          HomeWidget.saveWidgetData<String>(
-              'headline_title', newHeadline.id.toString());
-          HomeWidget.saveWidgetData<String>(
-              'headline_description', newHeadline.description);
-          HomeWidget.updateWidget(
-            iOSName: 'NewsWidgets',
-            androidName: 'NewsWidget',
-          );
-        }
-      });
-    });
 
     ///didChangeDependencies loads after the initState
     ///it provides the context from the tree
