@@ -3,15 +3,33 @@
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:home_widget/home_widget.dart';
 
 import 'package:intl/intl.dart';
 
 import 'package:taskwarrior/config/app_settings.dart';
+import 'package:taskwarrior/model/storage.dart';
 import 'package:taskwarrior/model/storage/storage_widget.dart';
 import 'package:taskwarrior/services/notification_services.dart';
-import 'package:taskwarrior/widgets/taskfunctions/taskparser.dart';
 import 'package:taskwarrior/widgets/taskw.dart';
+// ignore_for_file: depend_on_referenced_packages
 
+import 'dart:io';
+
+import 'package:path_provider/path_provider.dart';
+
+import 'package:taskwarrior/views/home/home.dart';
+import 'package:taskwarrior/widgets/taskdetails/profiles_widget.dart';
+// ignore_for_file: use_key_in_widget_constructors, prefer_const_constructors, deprecated_member_use, avoid_unnecessary_containers, unused_element, prefer_const_literals_to_create_immutables, library_private_types_in_public_api, use_build_context_synchronously
+
+// ignore_for_file: depend_on_referenced_packages, prefer_typing_uninitialized_variables
+
+import 'package:syncfusion_flutter_charts/charts.dart';
+import 'package:taskwarrior/model/json/task.dart';
+
+// import 'package:taskwarrior/model/task.dart';
+//import 'package:flutter_dotenv/flutter_dotenv.dart'
 class AddTaskBottomSheet extends StatefulWidget {
   const AddTaskBottomSheet({Key? key}) : super(key: key);
 
@@ -156,6 +174,77 @@ class _AddTaskBottomSheetState extends State<AddTaskBottomSheet> {
     );
   }
 
+  late InheritedStorage storageWidget;
+
+  late Storage storage;
+  late final Filters filters;
+  List<Task> taskData = [];
+  List<ChartSeries> dailyBurnDown = [];
+  Directory? baseDirectory;
+  List<Task> allData = [];
+
+  Future<void> _sendData() async {
+    try {
+      storageWidget = StorageWidget.of(context);
+      var currentProfile = ProfilesWidget.of(context).currentProfile;
+
+      baseDirectory = await getApplicationDocumentsDirectory();
+      setState(() {
+        storage = Storage(
+          Directory('${baseDirectory!.path}/profiles/$currentProfile'),
+        );
+      });
+
+      ///fetch all data contains all the tasks
+      allData = storage.data.allData();
+
+      ///check if allData is not empty
+      if (allData.isNotEmpty) {
+        HomeWidget.setAppGroupId('taskwarrior');
+        final List<String> placesData = [];
+        final List<String> datesData = [];
+
+        for (int i = 0; i < allData.length; i++) {
+          placesData.add(
+              "${(allData[i].id == 0) ? '#' : allData[i].id}. ${allData[i].description}");
+          datesData.add(
+              'Last Modified: ${(allData[i].modified != null) ? age(allData[i].modified!) : ((allData[i].start != null) ? age(allData[i].start!) : '-')} | '
+                          'Due: ${(allData[i].due != null) ? when(allData[i].due!) : '-'}'
+                      .replaceFirst(RegExp(r' \[\]$'), '')
+                      .replaceAll(RegExp(r' +'), ' ') +
+                  formatUrgency(urgency(allData[i])));
+        }
+        await HomeWidget.saveWidgetData<String>(
+            'placesData', placesData.join(','));
+        await HomeWidget.saveWidgetData<String>(
+            'datesData', datesData.join(','));
+        _updateWidget();
+      }
+    } on PlatformException catch (exception) {
+      debugPrint('Error Sending Data. $exception');
+    }
+  }
+
+  Future<void> _sendAndUpdate() async {
+    await _sendData();
+  }
+
+  Future<void> _updateWidget() async {
+    try {
+
+      
+      await HomeWidget.updateWidget(
+        name: 'WidgetProvider',
+        androidName: 'WidgetProvider',
+        qualifiedAndroidName: "com.example.taskwarrior.widget.WidgetProvider",
+      );
+
+      print("widget is updated");
+    } on PlatformException catch (exception) {
+      debugPrint('Error Updating Widget. $exception');
+    }
+  }
+
   Widget buildName() => TextFormField(
         controller: namecontroller,
         decoration: const InputDecoration(
@@ -238,6 +327,8 @@ class _AddTaskBottomSheetState extends State<AddTaskBottomSheet> {
                     ? const Color.fromARGB(255, 61, 61, 61)
                     : const Color.fromARGB(255, 39, 39, 39),
                 duration: const Duration(seconds: 2)));
+
+            _sendAndUpdate();
           }
         } on FormatException catch (e) {
           Navigator.of(context).pop();

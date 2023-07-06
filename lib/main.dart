@@ -3,10 +3,13 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:home_widget/home_widget.dart';
 
 import 'package:loggy/loggy.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:taskwarrior/widgets/taskfunctions/datetime_differences.dart';
 import 'package:uuid/uuid.dart';
 
 import 'package:taskwarrior/routes/pageroute.dart';
@@ -17,14 +20,14 @@ import 'package:taskwarrior/widgets/pallete.dart';
 import 'package:taskwarrior/widgets/taskdetails/profiles_widget.dart';
 // ignore_for_file: use_key_in_widget_constructors, prefer_const_constructors, deprecated_member_use, avoid_unnecessary_containers, unused_element, prefer_const_literals_to_create_immutables, library_private_types_in_public_api, use_build_context_synchronously
 
-import 'package:home_widget/home_widget.dart';
-
 import 'package:taskwarrior/model/storage/storage_widget.dart';
 // ignore_for_file: depend_on_referenced_packages, prefer_typing_uninitialized_variables
 
 import 'package:syncfusion_flutter_charts/charts.dart';
 import 'package:taskwarrior/model/json/task.dart';
 import 'package:taskwarrior/model/storage.dart';
+
+import 'widgets/taskfunctions/urgency.dart';
 // import 'package:taskwarrior/model/task.dart';
 //import 'package:flutter_dotenv/flutter_dotenv.dart'
 
@@ -83,6 +86,7 @@ class _MyAppState extends State<MyApp> {
   List<ChartSeries> dailyBurnDown = [];
   Directory? baseDirectory;
   List<Task> allData = [];
+
   @override
   void initState() {
     super.initState();
@@ -103,44 +107,77 @@ class _MyAppState extends State<MyApp> {
 
         ///check if allData is not empty
         if (allData.isNotEmpty) {
-          print("allData.length${allData.length}");
-
-          ///sort the data by daily burn down
-          HomeWidget.setAppGroupId('group.leighawidget');
-
-          // Mock read in some data and update the headline
-          final newHeadline = allData[0];
-
-          // print(newHeadline);
-          // print(newHeadline.id.toString());
-          // print(newHeadline.description);
-          HomeWidget.saveWidgetData<String>(
-              'headline_title', newHeadline.id.toString());
-          HomeWidget.saveWidgetData<String>(
-              'headline_description', newHeadline.description);
-          HomeWidget.updateWidget(
-            iOSName: 'NewsWidgets',
-            androidName: 'NewsWidget',
-          );
+          _sendAndUpdate();
         }
       });
     });
 
     ///sort the data by daily burn down
-    HomeWidget.setAppGroupId('group.leighawidget');
 
-    // print(newHeadline);
-    // print(newHeadline.id.toString());
-    // print(newHeadline.description);
-    HomeWidget.saveWidgetData<String>(
-        'headline_title', "newHeadline.id.toString()");
-    HomeWidget.saveWidgetData<String>(
-        'headline_description', "newHeadline.description");
-    HomeWidget.updateWidget(
-      iOSName: 'NewsWidgets',
-      androidName: 'NewsWidget',
-    );
     notificationService.initiliazeNotification();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _checkForWidgetLaunch();
+    HomeWidget.widgetClicked.listen(_launchedFromWidget);
+  }
+
+  _sendData() async {
+    try {
+      final List<String> placesData = [];
+      final List<String> datesData = [];
+
+      for (int i = 0; i < allData.length; i++) {
+        placesData.add(
+            "${(allData[i].id == 0) ? '#' : allData[i].id}. ${allData[i].description}");
+        datesData.add(
+            'Last Modified: ${(allData[i].modified != null) ? age(allData[i].modified!) : ((allData[i].start != null) ? age(allData[i].start!) : '-')} | '
+                        'Due: ${(allData[i].due != null) ? when(allData[i].due!) : '-'}'
+                    .replaceFirst(RegExp(r' \[\]$'), '')
+                    .replaceAll(RegExp(r' +'), ' ') +
+                formatUrgency(urgency(allData[i])));
+      }
+      return Future.wait([
+        HomeWidget.saveWidgetData<String>('placesData', placesData.join(',')),
+        HomeWidget.saveWidgetData<String>('datesData', datesData.join(',')),
+      ]);
+    } on PlatformException catch (exception) {
+      debugPrint('Error Sending Data. $exception');
+    }
+  }
+
+  Future<void> _sendAndUpdate() async {
+    await _sendData();
+    await _updateWidget();
+  }
+
+  _updateWidget() async {
+    try {
+      return HomeWidget.updateWidget(
+          name: 'WidgetProvider',
+          androidName: 'WidgetProvider',
+          qualifiedAndroidName:
+              "com.example.taskwarrior.widget.WidgetProvider");
+    } on PlatformException catch (exception) {
+      debugPrint('Error Updating Widget. $exception');
+    }
+  }
+
+  void _checkForWidgetLaunch() {
+    HomeWidget.initiallyLaunchedFromHomeWidget().then(_launchedFromWidget);
+  }
+
+  void _launchedFromWidget(Uri? uri) {
+    if (uri != null) {
+      showDialog(
+          context: context,
+          builder: (BuildContext buildContext) => AlertDialog(
+                title: const Text('App started from HomeScreenWidget'),
+                content: Text('Here is the URI: $uri'),
+              ));
+    }
   }
 
   @override
